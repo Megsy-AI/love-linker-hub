@@ -3,7 +3,10 @@ import { AlertCircle, Download, Film, Loader2, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+import MegsyStarGradient from "@/components/branding/MegsyStarGradient";
+import { useUserLang } from "@/lib/authI18n";
 import { SecureVideo } from "@/components/chat/media/SecureVideo";
+
 
 async function forceDownload(url: string, filename: string) {
   try {
