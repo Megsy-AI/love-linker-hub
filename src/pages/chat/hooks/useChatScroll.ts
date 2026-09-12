@@ -45,6 +45,45 @@ export function useChatScroll(params: {
   }, [messagesContainerRef, setNewMessagesCount]);
 
   const lastMsgCountRef = useRef(0);
+  const userInteractingRef = useRef(false);
+
+  // A direct gesture (wheel / touch drag / keyboard) always wins over
+  // auto-pinning. Without this the ResizeObserver below keeps snapping the
+  // transcript to the bottom while the user is dragging, which reads as
+  // "everything jumps up and scrolling freezes".
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    let release = 0;
+
+    const markInteracting = (unpin: boolean) => {
+      userInteractingRef.current = true;
+      if (unpin) pinnedToBottomRef.current = false;
+      window.clearTimeout(release);
+      release = window.setTimeout(() => {
+        userInteractingRef.current = false;
+      }, 600);
+    };
+
+    const onWheel = (e: WheelEvent) => markInteracting(e.deltaY < 0);
+    const onTouchStart = () => markInteracting(false);
+    const onTouchMove = () => markInteracting(true);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (["ArrowUp", "PageUp", "Home"].includes(e.key)) markInteracting(true);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: true });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(release);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("keydown", onKeyDown);
+    };
+  }, [messagesContainerRef]);
 
   // Auto-scroll only on the user's own new message, not during streaming.
   useEffect(() => {
