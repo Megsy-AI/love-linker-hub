@@ -42,7 +42,7 @@ export default function ComputerTaskCard({ taskId }: Props) {
   // sessions too; follow the user's interface language instead.
   const lang = useUserLang();
   const labels =
-    lang === "ar"
+    lang === "ar-eg"
       ? { run: "تشغيل المعاينة", tap: "اضغط للمعاينة" }
       : { run: "Open preview", tap: "Tap to preview" };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
