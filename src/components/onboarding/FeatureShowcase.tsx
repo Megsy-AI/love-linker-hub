@@ -301,8 +301,8 @@ function DotWord({ text }: { text: string }) {
     <span className="dot-word" aria-label={text} role="img">
       <svg viewBox={`0 0 ${width} 120`} aria-hidden="true">
         <defs>
-          <pattern id={id} width="7.4" height="7.4" patternUnits="userSpaceOnUse">
-            <circle cx="3.7" cy="3.7" r="2.55" fill="currentColor" />
+          <pattern id={id} width="12.6" height="12.6" patternUnits="userSpaceOnUse">
+            <circle cx="6.3" cy="6.3" r="4.5" fill="currentColor" />
           </pattern>
         </defs>
         <text

@@ -76,6 +76,7 @@
   color: #ad314d;
   transform: translateY(0.09em);
 }
+.wstage__line > .dot-word:first-child { margin-left: 0; }
 .dot-word svg { display: block; height: 100%; width: auto; overflow: visible; }
 
 /* ---------------- Glass metric card ---------------- */
