@@ -8,7 +8,11 @@
  * straight back, so the existing chat client needs no new parsing.
  */
 
-import { getAbliterationKey } from "../keys/abliterationKey";
+import {
+  getAbliterationKeys,
+  markAbliterationFailure,
+  markAbliterationUse,
+} from "../keys/abliterationKey";
 
 const BASE = "https://api.abliteration.ai/v1";
 
