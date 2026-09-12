@@ -299,11 +299,19 @@ export async function streamChat({
       }
       return;
     } catch (e: any) {
-      onError?.(e?.message || "Background job failed to start.");
-      await onDone();
-      return;
+      // The background-job endpoint can be unavailable (not deployed / network
+      // blip), which used to surface as a dead "Failed to fetch" turn. Fall
+      // through to the normal streaming path instead of failing the message.
+      const msg = String(e?.message || "");
+      if (/sign in/i.test(msg)) {
+        onError?.(msg);
+        await onDone();
+        return;
+      }
+      onStatus?.("");
     }
   }
+
 
   let receivedAnyContent = false;
   const origOnDelta = onDelta;
