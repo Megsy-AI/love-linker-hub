@@ -114,10 +114,12 @@ export function useChatScroll(params: {
 
     let frame = 0;
     const observer = new ResizeObserver(() => {
-      if (!pinnedToBottomRef.current) return;
+      if (!pinnedToBottomRef.current || userInteractingRef.current) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        el.scrollTop = el.scrollHeight;
+        if (!pinnedToBottomRef.current || userInteractingRef.current) return;
+        const target = el.scrollHeight - el.clientHeight;
+        if (Math.abs(el.scrollTop - target) > 1) el.scrollTop = target;
       });
     });
     observer.observe(content);
