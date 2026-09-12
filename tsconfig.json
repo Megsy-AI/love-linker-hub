@@ -28,8 +28,7 @@
     "types": [
       "vite/client"
     ],
-    "useDefineForClassFields": true,
-    "strictNullChecks": true
+    "useDefineForClassFields": true
   },
   "include": [
     "src",
@@ -41,6 +40,9 @@
     "src/**/*.test.tsx",
     "src/test",
     "src/lib/seed-templates",
-    "src/routeTree.gen.ts"
+    "src/routeTree.gen.ts",
+    "src/router.tsx",
+    "src/start.ts",
+    "src/routes"
   ]
 }
