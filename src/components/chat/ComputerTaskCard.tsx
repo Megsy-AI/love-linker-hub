@@ -211,7 +211,7 @@ export default function ComputerTaskCard({ taskId }: Props) {
             onClick={() => void runPreview()}
             className="w-full rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-[13px] font-medium text-primary transition-colors hover:bg-primary/15"
           >
-            تشغيل المعاينة
+            {labels.run}
           </button>
         ) : null}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -243,7 +243,7 @@ export default function ComputerTaskCard({ taskId }: Props) {
                   {f.name}
                 </span>
                 <span className="block text-[11.5px] text-muted-foreground">
-                  اضغط للمعاينة
+                  {labels.tap}
                 </span>
               </span>
             </button>
