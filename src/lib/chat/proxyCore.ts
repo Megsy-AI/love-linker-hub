@@ -8,6 +8,8 @@
  * straight back, so the existing chat client needs no new parsing.
  */
 
+import { getAbliterationKey } from "../keys/abliterationKey";
+
 const BASE = "https://api.abliteration.ai/v1";
 
 export const PROXY_MODELS = {
