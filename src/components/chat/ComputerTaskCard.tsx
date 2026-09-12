@@ -17,6 +17,7 @@ import {
 import AgentTrace from "@/components/chat/AgentTrace";
 import ChatMessage from "@/components/chat/ChatMessage";
 import FilePreviewDialog, { type PreviewFile } from "@/components/chat/FilePreviewDialog";
+import { useUserLang } from "@/lib/authI18n";
 
 
 import { clearActiveComputerRun, setActiveComputerRun } from "@/lib/computer/activeRun";
@@ -37,6 +38,13 @@ export default function ComputerTaskCard({ taskId }: Props) {
   const [timedOut, setTimedOut] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [preview, setPreview] = useState<PreviewFile | null>(null);
+  // These two labels used to be hard-coded in Arabic and showed up in English
+  // sessions too; follow the user's interface language instead.
+  const lang = useUserLang();
+  const labels =
+    lang === "ar"
+      ? { run: "تشغيل المعاينة", tap: "اضغط للمعاينة" }
+      : { run: "Open preview", tap: "Tap to preview" };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
