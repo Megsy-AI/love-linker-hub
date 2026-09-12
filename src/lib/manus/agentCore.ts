@@ -316,15 +316,21 @@ export async function handleComputerAgent(payload: ComputerPayload | null): Prom
         ? `${preamble}Context from earlier in this conversation:\n${memory}\n\n---\nTask:\n${prompt}`
         : `${preamble}Task:\n${prompt}`;
 
-      const res = await callUpstream(supabase, {
+      // Cheapest tier by default (overridable with MANUS_TASK_MODE); fall back
+      // to the provider default if it rejects the mode value.
+      const taskMode = process.env.MANUS_TASK_MODE || "speed";
+      const taskBody = {
+        prompt: fullPrompt,
+        attachments: payload.attachments?.length ? payload.attachments : undefined,
+      };
+      let res = await callUpstream(supabase, {
         path: "/v1/tasks",
         method: "POST",
-        body: {
-          prompt: fullPrompt,
-          mode: "quality",
-          attachments: payload.attachments?.length ? payload.attachments : undefined,
-        },
+        body: { ...taskBody, mode: taskMode },
       });
+      if (res.ok === false && res.status === 400 && /mode/i.test(res.message || "")) {
+        res = await callUpstream(supabase, { path: "/v1/tasks", method: "POST", body: taskBody });
+      }
 
       if (!res.ok) {
         const fail = res as UpstreamFail;
