@@ -266,7 +266,8 @@ function ProScreen() {
 function TrialScreen() {
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col pb-44 sm:max-w-lg">
-      <div className="relative h-[60dvh] min-h-[360px] max-h-[620px] w-full overflow-hidden">
+      <div className="relative h-[64dvh] min-h-[400px] max-h-[640px] w-full overflow-hidden">
+
         <img
           src={welcomeTrial}
           alt="Korean fashion model holding a translucent three-light membership card"
