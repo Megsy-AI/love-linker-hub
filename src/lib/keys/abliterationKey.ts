@@ -35,7 +35,8 @@ function adminClient(): SupabaseClient | null {
 /** Every usable key, best candidate first (priority desc, least-recently-used). */
 export async function getAbliterationKeys(): Promise<AbliterationKey[]> {
   const supabase = adminClient();
-  const rows: Array<AbliterationKey & { priority: number; last_used_at: string | null }> = [];
+  type Row = AbliterationKey & { priority: number; last_used_at: string | null; cooling: boolean };
+  const rows: Row[] = [];
 
   if (supabase) {
     const now = Date.now();
@@ -46,7 +47,6 @@ export async function getAbliterationKeys(): Promise<AbliterationKey[]> {
       .eq("status", "active");
     for (const r of (dedicated ?? []) as Array<Record<string, unknown>>) {
       const cd = r.cooldown_until as string | null;
-      if (cd && new Date(cd).getTime() > now) continue;
       const api_key = String(r.api_key ?? "").trim();
       if (!api_key) continue;
       rows.push({
@@ -56,17 +56,19 @@ export async function getAbliterationKeys(): Promise<AbliterationKey[]> {
         failure_count: Number(r.failure_count ?? 0),
         priority: Number(r.priority ?? 0),
         last_used_at: (r.last_used_at as string | null) ?? null,
+        cooling: Boolean(cd && new Date(cd).getTime() > now),
       });
     }
 
     const { data: pool } = await supabase
       .from("provider_api_keys")
-      .select("id,api_key,last_used_at,failure_count")
+      .select("id,api_key,last_used_at,cooldown_until,failure_count")
       .eq("provider", "d")
       .eq("status", "active");
     for (const r of (pool ?? []) as Array<Record<string, unknown>>) {
       const api_key = String(r.api_key ?? "").trim();
       if (!api_key) continue;
+      const cd = r.cooldown_until as string | null;
       rows.push({
         id: String(r.id),
         table: "provider_api_keys",
@@ -74,10 +76,14 @@ export async function getAbliterationKeys(): Promise<AbliterationKey[]> {
         failure_count: Number(r.failure_count ?? 0),
         priority: 0,
         last_used_at: (r.last_used_at as string | null) ?? null,
+        cooling: Boolean(cd && new Date(cd).getTime() > now),
       });
     }
 
+    // Healthy keys first (evenly rotated), keys on cooldown only as a last
+    // resort so a single-key setup is never left with nothing to call.
     rows.sort((a, b) => {
+      if (a.cooling !== b.cooling) return a.cooling ? 1 : -1;
       if (a.priority !== b.priority) return b.priority - a.priority;
       const ta = a.last_used_at ? new Date(a.last_used_at).getTime() : 0;
       const tb = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
