@@ -1,12 +1,21 @@
 /** @doc Server-only loader for the text-provider (abliteration) API key.
  *  Keys live in the database (`abliteration_keys`, plus the shared
  *  `provider_api_keys` pool with provider "d"). Env vars are only a fallback.
+ *
+ *  Load is spread evenly across every active key: candidates are ordered by
+ *  priority, then least-recently-used, and each use stamps `last_used_at` so the
+ *  next request picks a different key. Failures put a key on cooldown (or mark
+ *  it exhausted/disabled) so the pool self-heals.
  *  Never import this from client code.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const CACHE_MS = 60_000;
-let cached: { key: string; at: number } | null = null;
+export interface AbliterationKey {
+  id: string;
+  table: "abliteration_keys" | "provider_api_keys" | "env";
+  api_key: string;
+  failure_count: number;
+}
 
 function envKey(): string {
   return (
@@ -23,24 +32,28 @@ function adminClient(): SupabaseClient | null {
   return createClient(url, serviceKey, { auth: { persistSession: false } });
 }
 
-/** Active key from the DB pool (priority desc, least-recently-used), else env. */
-export async function getAbliterationKey(): Promise<string> {
-  if (cached && Date.now() - cached.at < CACHE_MS) return cached.key;
-
+/** Every usable key, best candidate first (priority desc, least-recently-used). */
+export async function getAbliterationKeys(): Promise<AbliterationKey[]> {
   const supabase = adminClient();
+  const rows: Array<AbliterationKey & { priority: number; last_used_at: string | null }> = [];
+
   if (supabase) {
     const now = Date.now();
-    const rows: Array<{ api_key: string; priority: number; last_used_at: string | null }> = [];
 
     const { data: dedicated } = await supabase
       .from("abliteration_keys")
-      .select("api_key,priority,last_used_at,cooldown_until")
+      .select("id,api_key,priority,last_used_at,cooldown_until,failure_count")
       .eq("status", "active");
     for (const r of (dedicated ?? []) as Array<Record<string, unknown>>) {
       const cd = r.cooldown_until as string | null;
       if (cd && new Date(cd).getTime() > now) continue;
+      const api_key = String(r.api_key ?? "").trim();
+      if (!api_key) continue;
       rows.push({
-        api_key: String(r.api_key ?? ""),
+        id: String(r.id),
+        table: "abliteration_keys",
+        api_key,
+        failure_count: Number(r.failure_count ?? 0),
         priority: Number(r.priority ?? 0),
         last_used_at: (r.last_used_at as string | null) ?? null,
       });
@@ -48,12 +61,17 @@ export async function getAbliterationKey(): Promise<string> {
 
     const { data: pool } = await supabase
       .from("provider_api_keys")
-      .select("api_key,last_used_at")
+      .select("id,api_key,last_used_at,failure_count")
       .eq("provider", "d")
       .eq("status", "active");
     for (const r of (pool ?? []) as Array<Record<string, unknown>>) {
+      const api_key = String(r.api_key ?? "").trim();
+      if (!api_key) continue;
       rows.push({
-        api_key: String(r.api_key ?? ""),
+        id: String(r.id),
+        table: "provider_api_keys",
+        api_key,
+        failure_count: Number(r.failure_count ?? 0),
         priority: 0,
         last_used_at: (r.last_used_at as string | null) ?? null,
       });
@@ -65,20 +83,63 @@ export async function getAbliterationKey(): Promise<string> {
       const tb = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
       return ta - tb;
     });
-
-    const picked = rows.find((r) => r.api_key.length > 0);
-    if (picked) {
-      cached = { key: picked.api_key, at: Date.now() };
-      return picked.api_key;
-    }
   }
 
+  const out: AbliterationKey[] = rows.map(({ id, table, api_key, failure_count }) => ({
+    id,
+    table,
+    api_key,
+    failure_count,
+  }));
+
   const fallback = envKey();
-  if (fallback) cached = { key: fallback, at: Date.now() };
-  return fallback;
+  if (fallback) out.push({ id: "env", table: "env", api_key: fallback, failure_count: 0 });
+  return out;
 }
 
-/** Drop the cached key (call after an auth failure so the next call re-reads). */
-export function clearAbliterationKeyCache(): void {
-  cached = null;
+/** Stamp a key as just used so the next request rotates to another one. */
+export async function markAbliterationUse(key: AbliterationKey): Promise<void> {
+  if (key.table === "env") return;
+  const supabase = adminClient();
+  if (!supabase) return;
+  await supabase
+    .from(key.table)
+    .update({ last_used_at: new Date().toISOString(), last_error: null })
+    .eq("id", key.id);
 }
+
+/** Record a failure: cooldown for transient errors, hard status for billing/auth. */
+export async function markAbliterationFailure(
+  key: AbliterationKey,
+  status: number,
+  message: string,
+  retryAfterSec?: number,
+): Promise<void> {
+  if (key.table === "env") return;
+  const supabase = adminClient();
+  if (!supabase) return;
+  const patch: Record<string, unknown> = {
+    failure_count: key.failure_count + 1,
+    last_error: `${status}: ${message}`.slice(0, 500),
+  };
+  if (status === 401) patch.status = "disabled";
+  else if (status === 402 || status === 403) patch.status = "exhausted";
+  else if (key.table === "abliteration_keys") {
+    patch.cooldown_until = new Date(
+      Date.now() + (status === 429 ? (retryAfterSec ?? 120) : 30) * 1000,
+    ).toISOString();
+  }
+  await supabase.from(key.table).update(patch).eq("id", key.id);
+}
+
+/** First usable key (kept for callers that only need a key, e.g. research). */
+export async function getAbliterationKey(): Promise<string> {
+  const keys = await getAbliterationKeys();
+  const picked = keys[0];
+  if (!picked) return "";
+  await markAbliterationUse(picked);
+  return picked.api_key;
+}
+
+/** No-op kept for compatibility: keys are no longer cached in memory. */
+export function clearAbliterationKeyCache(): void {}
