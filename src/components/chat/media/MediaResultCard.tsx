@@ -3,7 +3,10 @@ import { AlertCircle, Download, Film, Loader2, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+import MegsyStarGradient from "@/components/branding/MegsyStarGradient";
+import { useUserLang } from "@/lib/authI18n";
 import { SecureVideo } from "@/components/chat/media/SecureVideo";
+
 
 async function forceDownload(url: string, filename: string) {
   try {
@@ -139,7 +142,11 @@ export default function MediaResultCard({
                     </>
                   )
                 ) : r.status === "running" ? (
-                  <RunningTile previewUrl={r.type === "image" ? r.previewUrl : undefined} />
+                  <RunningTile
+                    kind={r.type === "video" ? "video" : "images"}
+                    previewUrl={r.type === "image" ? r.previewUrl : undefined}
+                  />
+
                 ) : r.status === "error" ? (
                   <div className="flex flex-col items-center gap-1.5 text-destructive p-3 text-center">
                     <AlertCircle className="w-5 h-5" />
@@ -243,13 +250,29 @@ export default function MediaResultCard({
 }
 
 /**
- * ChatGPT-style loading tile:
+ * Unified loading tile (same language as MediaGenerationSkeleton):
  *  - Clean surface, no border
- *  - Diagonal shimmer stripes sweeping across
- *  - Soft breathing overlay + optional blurred partial preview
- *  - Thin progress hairline at the bottom
+ *  - One diagonal light sweep
+ *  - Megsy star breathing in the centre + one quiet caption
  */
-function RunningTile({ previewUrl }: { progress?: number; previewUrl?: string }) {
+function RunningTile({
+  previewUrl,
+  kind = "images",
+}: {
+  progress?: number;
+  previewUrl?: string;
+  kind?: "images" | "video";
+}) {
+  const lang = useUserLang();
+  const isAr = lang.startsWith("ar");
+  const label =
+    kind === "video"
+      ? isAr
+        ? "جاري توليد الفيديو"
+        : "Creating your video"
+      : isAr
+        ? "جاري توليد الصورة"
+        : "Creating your image";
   return (
     <>
       {previewUrl ? (
@@ -276,6 +299,22 @@ function RunningTile({ previewUrl }: { progress?: number; previewUrl?: string })
         animate={{ x: ["-40%", "140%"] }}
         transition={{ duration: 2.3, ease: "easeInOut", repeat: Infinity }}
       />
+
+      {/* Centre mark — identical to the media skeleton */}
+      <div
+        className="absolute inset-0 grid place-items-center"
+        role="status"
+        aria-live="polite"
+        dir={isAr ? "rtl" : undefined}
+      >
+        <div className="flex flex-col items-center gap-2.5">
+          <MegsyStarGradient className="h-7 w-7 motion-safe:animate-[media-breathe_1.8s_ease-in-out_infinite]" />
+          <span className="px-4 text-center text-[12.5px] font-medium text-muted-foreground">
+            {label}
+          </span>
+        </div>
+      </div>
+
 
     </>
   );
