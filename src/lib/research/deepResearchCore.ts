@@ -12,6 +12,7 @@ import {
   validateResearchPayload,
   type ResearchPayload,
 } from "./deepResearchShared";
+import { getAbliterationKey } from "../keys/abliterationKey";
 
 const BASE = (process.env.ABLITERATION_API_BASE || "https://api.abliteration.ai/v1").replace(
   /\/$/,
@@ -27,11 +28,11 @@ export async function streamDeepResearch(
   payload: ResearchPayload,
   request?: Request,
 ): Promise<Response> {
-  const key = apiKey();
+  const key = await apiKey();
   if (!key) {
     return Response.json(
       {
-        error: "Deep Research is not configured: missing ABLITERATION_API_KEY.",
+        error: "Deep Research is not configured: no active provider key.",
         missingEnv: "ABLITERATION_API_KEY",
       },
       { status: 500 },
