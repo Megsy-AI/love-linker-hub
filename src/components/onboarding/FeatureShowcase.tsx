@@ -22,15 +22,17 @@ export default function FeatureShowcase({onFinish}:{onFinish?:(target?:"trial")=
  const [active,setActive]=useState(0);
  const [region]=useState<PayRegion>(()=>getPayRegionOrGuess());
  const trackRef=useRef<HTMLDivElement>(null);
+ const finishRef=useRef(onFinish);
+ finishRef.current=onFinish;
  useEffect(()=>{setPayRegion(region);void setUserLang("en",{syncRemote:false});},[region]);
  useEffect(()=>{const b=document.body.style.overflow;document.body.style.overflow=offer?"hidden":"";return()=>{document.body.style.overflow=b}},[offer]);
  useEffect(()=>{
   const media=window.matchMedia("(min-width: 768px)");
-  const leaveDesktop=()=>{if(media.matches)onFinish?.()};
+  const leaveDesktop=()=>{if(media.matches)window.setTimeout(()=>finishRef.current?.(),0)};
   leaveDesktop();media.addEventListener("change",leaveDesktop);
   return()=>media.removeEventListener("change",leaveDesktop);
- },[onFinish]);
- const goTo=(index:number)=>{trackRef.current?.children[index]?.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});setActive(index)};
+ },[]);
+ const goTo=(index:number)=>{const track=trackRef.current;const card=track?.children[index] as HTMLElement|undefined;if(track&&card)track.scrollTo({left:card.offsetLeft-track.offsetLeft,behavior:"smooth"});setActive(index)};
  const continueFlow=()=>{if(active<CARDS.length-1)goTo(active+1);else setOffer(true)};
  return <main className="perf-stage" dir="ltr">
   <StageVideo/><div className="perf-veil"/>
