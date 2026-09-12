@@ -179,5 +179,7 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("tailwindcss-rtl")],
+  // tailwindcss-rtl removed: Tailwind v4 ships logical properties (ms-/, me-/,
+  // ps-/, pe-/, start/end) and the rtl: variant natively.
+  plugins: [require("tailwindcss-animate")],
 } satisfies Config;
