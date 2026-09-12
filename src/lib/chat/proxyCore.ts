@@ -86,8 +86,8 @@ export async function streamChatProxy(
       headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
 
-  const key = await apiKey();
-  if (!key) return json({ error: "Chat provider not configured" }, 503);
+  const keys = await getAbliterationKeys();
+  if (!keys.length) return json({ error: "Chat provider not configured" }, 503);
 
   const messages = normalizeMessages(payload?.messages);
   if (!messages) return json({ error: "A valid messages array is required" }, 400);
@@ -98,29 +98,49 @@ export async function streamChatProxy(
     .filter(Boolean)
     .join("\n\n");
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(`${BASE}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        stream: true,
-        stream_options: { include_usage: true },
-        include_reasoning: payload?.thinking !== false,
-        temperature: 0.7,
-        max_tokens: Math.min(Math.max(Number(payload?.maxTokens) || 8192, 512), 16384),
-        messages: [{ role: "system", content: system }, ...messages],
-      }),
-    });
-  } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "upstream_failed" }, 502);
+  const body = JSON.stringify({
+    model,
+    stream: true,
+    stream_options: { include_usage: true },
+    include_reasoning: payload?.thinking !== false,
+    temperature: 0.7,
+    max_tokens: Math.min(Math.max(Number(payload?.maxTokens) || 8192, 512), 16384),
+    messages: [{ role: "system", content: system }, ...messages],
+  });
+
+  // Spread load across the pool and fail over to the next key when one is out
+  // of credit, rate limited or broken.
+  let upstream: Response | null = null;
+  let lastError = "Chat provider unavailable";
+  for (const key of keys) {
+    let resp: Response;
+    try {
+      resp = await fetch(`${BASE}/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key.api_key}`, "Content-Type": "application/json" },
+        body,
+      });
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "upstream_failed";
+      await markAbliterationFailure(key, 500, lastError);
+      continue;
+    }
+
+    if (resp.ok && resp.body) {
+      await markAbliterationUse(key);
+      upstream = resp;
+      break;
+    }
+
+    const detail = (await resp.text().catch(() => "")).slice(0, 400);
+    lastError = detail || `upstream_${resp.status}`;
+    const credit = /insufficient_credits|good standing|quota/i.test(detail);
+    const retryAfter = Number(resp.headers.get("retry-after") || "") || undefined;
+    await markAbliterationFailure(key, credit ? 402 : resp.status, lastError, retryAfter);
+    if (resp.status === 400 && !credit) break; // bad request — rotating won't help
   }
 
-  if (!upstream.ok || !upstream.body) {
-    const detail = await upstream.text().catch(() => "");
-    return json({ error: detail.slice(0, 400) || "Chat provider unavailable" }, 502);
-  }
+  if (!upstream || !upstream.body) return json({ error: lastError }, 502);
 
   return new Response(upstream.body, {
     status: 200,
