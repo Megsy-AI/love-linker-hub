@@ -122,12 +122,13 @@ export async function markAbliterationFailure(
     failure_count: key.failure_count + 1,
     last_error: `${status}: ${message}`.slice(0, 500),
   };
+  // Only a rejected key is disabled for good. Out-of-credit or rate-limited
+  // keys are parked on a cooldown so they rejoin the rotation once topped up.
   if (status === 401) patch.status = "disabled";
-  else if (status === 402 || status === 403) patch.status = "exhausted";
-  else if (key.table === "abliteration_keys") {
-    patch.cooldown_until = new Date(
-      Date.now() + (status === 429 ? (retryAfterSec ?? 120) : 30) * 1000,
-    ).toISOString();
+  else {
+    const seconds =
+      status === 402 || status === 403 ? 1800 : status === 429 ? (retryAfterSec ?? 120) : 30;
+    patch.cooldown_until = new Date(Date.now() + seconds * 1000).toISOString();
   }
   await supabase.from(key.table).update(patch).eq("id", key.id);
 }
