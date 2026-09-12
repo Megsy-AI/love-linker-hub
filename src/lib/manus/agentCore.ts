@@ -328,7 +328,7 @@ export async function handleComputerAgent(payload: ComputerPayload | null): Prom
         method: "POST",
         body: { ...taskBody, mode: taskMode },
       });
-      if (!res.ok && res.status === 400 && /mode/i.test(res.message || "")) {
+      if (res.ok === false && res.status === 400 && /mode/i.test(res.message || "")) {
         res = await callUpstream(supabase, { path: "/v1/tasks", method: "POST", body: taskBody });
       }
 
