@@ -15,3 +15,7 @@
 - [x] Snapshot capture on leave from first visit + clean #root before React mounts (spaBoot.ts)
 - [x] Typecheck (relaxed tsconfig mirroring source repo) + production build passes
 - [ ] Computer view on chat page — /api/computer-agent now wired (401 without auth, as expected); needs a signed-in test by the user to confirm end-to-end
+
+## Keys & onboarding (current)
+- [x] Read provider keys from DB tables (abliteration_keys + provider_api_keys) instead of env for chat & deep research
+- [ ] Replace onboarding slide 4 image and fix clipped text

@@ -8,6 +8,8 @@
  * straight back, so the existing chat client needs no new parsing.
  */
 
+import { getAbliterationKey } from "../keys/abliterationKey";
+
 const BASE = "https://api.abliteration.ai/v1";
 
 export const PROXY_MODELS = {
@@ -47,17 +49,13 @@ function normalizeMessages(input: unknown): Msg[] | null {
   return out;
 }
 
-function apiKey(): string {
-  return (
-    process.env.ABLITERATION_API_KEY ||
-    process.env.VITE_ABLITERATION_API_KEY ||
-    ""
-  ).trim();
+async function apiKey(): Promise<string> {
+  return (await getAbliterationKey()).trim();
 }
 
-/** True when this runtime can serve chat without Supabase. */
-export function hasChatProxyKey(): boolean {
-  return apiKey().length > 0;
+/** True when this runtime can serve chat (key comes from the DB key pool). */
+export async function hasChatProxyKey(): Promise<boolean> {
+  return (await apiKey()).length > 0;
 }
 
 export async function streamChatProxy(
@@ -70,7 +68,7 @@ export async function streamChatProxy(
       headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
 
-  const key = apiKey();
+  const key = await apiKey();
   if (!key) return json({ error: "Chat provider not configured" }, 503);
 
   const messages = normalizeMessages(payload?.messages);
