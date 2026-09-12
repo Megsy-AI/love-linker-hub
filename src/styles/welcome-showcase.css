@@ -71,11 +71,12 @@
 .dot-word {
   display: inline-block;
   flex: 0 0 auto;
-  height: 0.82em;
+  height: 0.9em;
   margin-left: 0.319em;
   color: #ad314d;
   transform: translateY(0.09em);
 }
+.dot-word--lead { margin-left: 0; }
 .dot-word svg { display: block; height: 100%; width: auto; overflow: visible; }
 
 /* ---------------- Glass metric card ---------------- */
