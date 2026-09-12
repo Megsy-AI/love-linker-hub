@@ -19,6 +19,7 @@ export type Database = {
           api_key: string
           cooldown_until: string | null
           created_at: string
+          failure_count: number
           id: string
           label: string | null
           last_error: string | null
@@ -32,6 +33,7 @@ export type Database = {
           api_key: string
           cooldown_until?: string | null
           created_at?: string
+          failure_count?: number
           id?: string
           label?: string | null
           last_error?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           api_key?: string
           cooldown_until?: string | null
           created_at?: string
+          failure_count?: number
           id?: string
           label?: string | null
           last_error?: string | null
