@@ -36,7 +36,7 @@ function SpaMount() {
   const [booted, setBooted] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    void import("@/lib/spaBoot").then(() => {
+    void loadChunk(() => import("@/lib/spaBoot")).then(() => {
       if (!cancelled) setBooted(true);
     });
     return () => {
