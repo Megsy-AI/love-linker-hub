@@ -1,5 +1,6 @@
 /** @doc Unified loading / status / stage primitives shared by every tool card (docs, slides, media, research, coder). */
 import type { ReactNode } from "react";
+import MegsyStar from "@/components/branding/MegsyStar";
 import { cn } from "@/lib/utils";
 
 /** Inline spinner + label — the single loading style for all tool cards. */
@@ -15,21 +16,27 @@ export function ToolLoader({
       className={cn("inline-flex items-center gap-2 text-[12px] text-muted-foreground", className)}
       role="status"
     >
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" aria-hidden />
-      {label}
+      <MegsyStar
+        className="h-3.5 w-3.5 shrink-0 text-[var(--megsy-blue)] motion-safe:animate-[media-breathe_1.8s_ease-in-out_infinite]"
+        aria-hidden
+      />
+      <span className="ai-shimmer motion-reduce:animate-none">{label}</span>
     </span>
   );
 }
 
-/** Pulsing dot + label — used in card headers while a job is streaming. */
+/** Megsy star + label — used in card headers while a job is streaming. */
 export function ToolPulse({ label, className }: { label?: ReactNode; className?: string }) {
   return (
     <span
       className={cn("inline-flex items-center gap-1.5 text-[11px] text-muted-foreground", className)}
       role="status"
     >
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" aria-hidden />
-      {label}
+      <MegsyStar
+        className="h-3 w-3 shrink-0 text-[var(--megsy-blue)] motion-safe:animate-[media-breathe_1.8s_ease-in-out_infinite]"
+        aria-hidden
+      />
+      <span className="ai-shimmer motion-reduce:animate-none">{label}</span>
     </span>
   );
 }
