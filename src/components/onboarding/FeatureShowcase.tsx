@@ -1,5 +1,5 @@
-import { useEffect, useId, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPayRegionOrGuess, setPayRegion, type PayRegion } from "@/lib/payRegion";
 import { setUserLang } from "@/lib/authI18n";
@@ -10,36 +10,55 @@ const WIDE_VIDEO="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH
 const NARROW_POSTER="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/0f4926a4-e660-4df2-9195-2bfb3e341bdd.webp";
 const NARROW_VIDEO="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_125242_daae1570-386d-4bd5-8896-80499e2371e0.mp4";
 
-type Card={kind:"speed"|"context"|"connections";title:string;subtitle:string;value:string;unit:string;caption:string};
+type Card={kind:"speed"|"context"|"connections";eyebrow:string;title:string;description:string;value:string;unit:string};
 const CARDS:Card[]=[
- {kind:"speed",title:"Inference Speed",subtitle:"AI Response Latency",value:"118",unit:"ms",caption:"Average global\nresponse"},
- {kind:"context",title:"Context Window",subtitle:"Long-form Understanding",value:"2.4",unit:"M",caption:"Tokens processed\nsimultaneously"},
- {kind:"connections",title:"Intelligent Connections",subtitle:"Cross-Source Context",value:"16",unit:"K",caption:"Connected data\nsources"},
+ {kind:"speed",eyebrow:"Inference Speed",title:"Answers at the speed of thought.",description:"Megsy responds in milliseconds, so every conversation keeps moving.",value:"118",unit:"ms"},
+ {kind:"context",eyebrow:"Context Window",title:"Understands the whole story.",description:"Work across long documents and complex ideas without losing context.",value:"2.4",unit:"M"},
+ {kind:"connections",eyebrow:"Intelligent Connections",title:"Everything works together.",description:"Bring your sources into one intelligent workspace built around you.",value:"16",unit:"K"},
 ];
 
 export default function FeatureShowcase({onFinish}:{onFinish?:(target?:"trial")=>void}){
  const [offer,setOffer]=useState(false);
+ const [active,setActive]=useState(0);
  const [region]=useState<PayRegion>(()=>getPayRegionOrGuess());
+ const trackRef=useRef<HTMLDivElement>(null);
+ const finishRef=useRef(onFinish);
+ finishRef.current=onFinish;
  useEffect(()=>{setPayRegion(region);void setUserLang("en",{syncRemote:false});},[region]);
  useEffect(()=>{const b=document.body.style.overflow;document.body.style.overflow=offer?"hidden":"";return()=>{document.body.style.overflow=b}},[offer]);
+ useEffect(()=>{
+  const media=window.matchMedia("(min-width: 768px)");
+  const leaveDesktop=()=>{if(media.matches)window.setTimeout(()=>finishRef.current?.(),0)};
+  leaveDesktop();media.addEventListener("change",leaveDesktop);
+  return()=>media.removeEventListener("change",leaveDesktop);
+ },[]);
+ const goTo=(index:number)=>{const track=trackRef.current;const card=track?.children[index] as HTMLElement|undefined;if(track&&card)track.scrollTo({left:card.offsetLeft-track.offsetLeft,behavior:"smooth"});setActive(index)};
+ const continueFlow=()=>{if(active<CARDS.length-1)goTo(active+1);else setOffer(true)};
  return <main className="perf-stage" dir="ltr">
   <StageVideo/><div className="perf-veil"/>
-  <header className="perf-head reveal">
-   <h1><span>Built for <Dots text="Intelligent"/></span><span>Performance</span></h1>
-   <p>Every capability is engineered for speed, scale and contextual understanding, giving your AI the foundation to reason, adapt and perform in production.</p>
+   <header className="perf-head">
+    <p className="perf-kicker"><Sparkles/> Meet Megsy</p>
+    <h1>Built for <Dots text="Intelligent"/> Performance</h1>
+    <p className="perf-intro">Speed, scale and context—engineered to help you do your best work.</p>
   </header>
-  <section className="perf-cards" aria-label="Performance capabilities">
-   {CARDS.map((card,i)=><MetricCard key={card.kind} card={card} delay={i}/>) }
+   <section className="perf-carousel" role="region" aria-roledescription="carousel" aria-label="Megsy capabilities">
+    <div ref={trackRef} className="perf-cards" onScroll={(event)=>{const el=event.currentTarget;const first=el.firstElementChild as HTMLElement|null;if(!first)return;const step=first.offsetWidth+14;setActive(Math.max(0,Math.min(CARDS.length-1,Math.round(el.scrollLeft/step))))}}>
+     {CARDS.map((card,i)=><MetricCard key={card.kind} card={card} index={i}/>) }
+    </div>
   </section>
-  <footer className="perf-actions"><div className="perf-dots"><i className={!offer?"on":""}/><i className={offer?"on":""}/></div><Button variant="ghost" data-plain onClick={()=>setOffer(true)} className="perf-next">Continue <ArrowRight/></Button></footer>
+   <footer className="perf-actions">
+    <div className="perf-progress" role="tablist" aria-label="Choose capability">{CARDS.map((card,index)=><button key={card.kind} type="button" role="tab" aria-selected={active===index} aria-label={`Capability ${index+1} of ${CARDS.length}: ${card.eyebrow}`} onClick={()=>goTo(index)} className={active===index?"on":""}/>)}</div>
+    <Button variant="ghost" data-plain onClick={continueFlow} className="perf-next">{active===CARDS.length-1?"See your offer":"Continue"}<ArrowRight/></Button>
+    <Button variant="ghost" data-plain onClick={()=>onFinish?.()} className="perf-skip">Skip for now</Button>
+   </footer>
   {offer&&<section className="perf-offer">
    <StageVideo/><div className="perf-veil"/>
-   <div className="offer-grid"><div className="offer-copy"><small>MEGSY PRO</small><h2>3 days for <Dots text="$1"/></h2><p>Get 3 premium images every day during your trial. Then continue for $7 in your first month with unlimited premium images, or cancel anytime.</p></div>
-   <article className="offer-card"><small>INTRODUCTORY TRIAL</small><div><strong>$1</strong><span>/ 3 days</span></div><hr/><ul><li>3 premium images every day</li><li>$7 for your first month</li><li>Unlimited premium images</li><li>Cancel anytime</li></ul></article></div>
-   <footer className="perf-actions offer-actions"><Button variant="ghost" data-plain onClick={()=>onFinish?.("trial")} className="perf-next">Start 3 days for $1 <ArrowRight/></Button><Button variant="ghost" data-plain onClick={()=>onFinish?.()} className="perf-later">Maybe later</Button></footer>
+    <div className="offer-copy"><p className="perf-kicker"><Sparkles/> Megsy Pro</p><h2>Make more<br/>for <Dots text="$1"/></h2><p>Try every premium tool for three days. Continue for $7 in your first month, or cancel anytime.</p></div>
+    <article className="offer-card"><div className="offer-price"><strong>$1</strong><span>3 days</span></div><ul><li><Check/>3 premium images every day</li><li><Check/>Unlimited premium images after trial</li><li><Check/>Cancel anytime</li></ul></article>
+    <footer className="perf-actions offer-actions"><Button variant="ghost" data-plain onClick={()=>onFinish?.("trial")} className="perf-next">Start my trial <ArrowRight/></Button><Button variant="ghost" data-plain onClick={()=>onFinish?.()} className="perf-skip">Maybe later</Button></footer>
   </section>}
  </main>
 }
 function StageVideo(){return <><video className="stage-video wide" autoPlay muted loop playsInline poster={WIDE_POSTER} src={WIDE_VIDEO}/><video className="stage-video narrow" autoPlay muted loop playsInline preload="none" poster={NARROW_POSTER} src={NARROW_VIDEO}/></>}
 function Dots({text}:{text:string}){const raw=useId(),id=`d${raw.replace(/\W/g,"")}`;return <span className="dot-word" aria-label={text}><svg viewBox={`0 0 ${text.length*58} 120`}><defs><pattern id={id} width="12.6" height="12.6" patternUnits="userSpaceOnUse"><circle cx="6.3" cy="6.3" r="4.9" fill="currentColor"/></pattern></defs><text x="0" y="94" fontFamily="Inter,sans-serif" fontWeight="600" fontSize="100" letterSpacing="0" fill={`url(#${id})`}>{text}</text></svg></span>}
-function MetricCard({card,delay}:{card:Card;delay:number}){return <article className={`metric-card ${card.kind}`} style={{animationDelay:`${.12+delay*.1}s`}}><div className="card-art">{card.kind==="speed"?<svg viewBox="0 0 326 326"><path d="M7 136A158.5 158.5 0 0 1 312 109"/></svg>:card.kind==="context"?<div className="tile-grid">{Array.from({length:7},(_,i)=><i key={i}/>)}</div>:<svg viewBox="0 0 429 238"><path d="M0 5H128c27 0 36 7 39 26 2 16 9 22 24 22h106c16 0 23-8 25-25 2-16 10-23 31-23h76M0 117h46c15 0 22 8 26 25 5 23 12 31 31 31h174c18 0 25-8 30-31 4-17 11-25 26-25h96M0 173h87c15 0 22 7 27 25 4 15 11 22 28 22h140c17 0 25-7 29-22 5-18 12-25 28-25h90"/></svg>}</div><h2>{card.title}<br/>{card.subtitle}</h2><div className="metric"><Dots text={card.value}/><span>{card.unit}</span></div><p>{card.caption.split("\n").map(x=><span key={x}>{x}</span>)}</p><Button variant="ghost" data-plain onClick={()=>document.querySelector(".perf-next")?.scrollIntoView({behavior:"smooth"})}>Learn More</Button></article>}
+function MetricCard({card,index}:{card:Card;index:number}){return <article className={`metric-card ${card.kind}`} role="group" aria-roledescription="slide" aria-label={`${index+1} of ${CARDS.length}`}><div className="card-art" aria-hidden="true">{card.kind==="speed"?<><span className="speed-orbit"/><span className="speed-core"/></>:card.kind==="context"?<div className="tile-grid">{Array.from({length:7},(_,i)=><i key={i}/>)}</div>:<svg viewBox="0 0 429 238"><path d="M-30 26H113c32 0 34 42 65 42h75c32 0 34-42 66-42h140M-30 120h83c32 0 34 56 66 56h160c32 0 34-56 66-56h114M-30 211h139c25 0 31-34 59-34h95c28 0 34 34 59 34h137"/></svg>}</div><p className="card-eyebrow">{card.eyebrow}</p><div className="metric"><strong>{card.value}</strong><span>{card.unit}</span></div><div className="card-copy"><h2>{card.title}</h2><p>{card.description}</p></div></article>}

@@ -18,6 +18,7 @@
 
 ## Welcome redesign and authenticated verification
 - [x] Rebuild the welcome experience from the supplied performance-stage specification
+- [x] Rework welcome as a mobile-only, fixed-screen horizontal card flow
 - [ ] Match the mobile sign-in and trial screens to the new welcome visual system
 - [x] Remove the page-snapshot hydration mismatch
 - [ ] Sign in with the supplied test account and verify the welcome-to-chat flow — blocked: this project uses external authentication unavailable to automated preview sessions
