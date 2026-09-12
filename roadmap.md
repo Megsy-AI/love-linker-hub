@@ -27,3 +27,5 @@
 - [x] Fixed hard-coded Arabic labels in the computer task card (now follow interface language)
 - [x] Production build passes; all routes return 200 (no soft-404 deep-link issue like the old megsyai.com host)
 - [ ] Provider billing: the stored abliteration key reports insufficient credits for the direct /api/chat path (production chat goes through the Supabase function and works)
+
+- [ ] ربط الموقع بجدول service_keys (Cerebras نصوص / DeAPI + Renderful صور وفيديو / Browser Use الوكيل) بدل abliteration — المفاتيح مشفرة ومحتاجة مفتاح فك التشفير
