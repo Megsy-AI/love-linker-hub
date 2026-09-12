@@ -41,6 +41,7 @@ const BackgroundJobNotifier = lazyWithRetry(
 /** Theme: light (white + pink) by default, dark available; auth screens always dark. */
 const useAppChrome = () => {
   useEffect(() => {
+    document.getElementById("snapshot-preview")?.remove();
     const root = document.getElementById("root");
     root?.removeAttribute("data-snapshot-preview");
     root?.removeAttribute("aria-busy");

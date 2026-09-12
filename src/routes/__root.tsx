@@ -129,11 +129,15 @@ const SNAPSHOT_RESTORE_SCRIPT = `(function () {
         }
       }
     });
-    var root = document.getElementById("root");
-    if (!root) return;
-    root.setAttribute("data-snapshot-preview", "true");
-    root.setAttribute("aria-busy", "true");
-    root.appendChild(tpl.content);
+    // The snapshot is painted in its own overlay element — never inside #root,
+    // which React hydrates (mutating it before hydration breaks the match).
+    var layer = document.createElement("div");
+    layer.id = "snapshot-preview";
+    layer.setAttribute("aria-busy", "true");
+    layer.setAttribute("aria-hidden", "true");
+    layer.style.cssText = "position:fixed;inset:0;z-index:2147483000;overflow:hidden;background:var(--background,#0b0b0c)";
+    layer.appendChild(tpl.content);
+    document.body.appendChild(layer);
   } catch (err) {}
 })();`;
 

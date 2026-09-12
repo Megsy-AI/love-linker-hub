@@ -298,7 +298,7 @@ export function installSnapshotCapture(): void {
       if (!root || !root.firstChild) return;
       // Skip if we're currently showing a snapshot preview (avoid re-saving
       // an unhydrated snapshot back onto itself).
-      if (root.getAttribute("data-snapshot-preview") === "true") return;
+      if (document.getElementById("snapshot-preview")) return;
       const html = root.innerHTML;
       if (!html || html.length > MAX_ENTRY_BYTES) return;
       saveSnapshot(path, html);

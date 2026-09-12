@@ -28,7 +28,7 @@ const PageTransition = ({
     const capture = () => {
       try {
         const root = document.getElementById("root");
-        if (!root || root.getAttribute("data-snapshot-preview") === "true") return;
+        if (!root || document.getElementById("snapshot-preview")) return;
         const html = root.innerHTML;
         if (html) scheduleSnapshotSave(path, html);
       } catch {}
