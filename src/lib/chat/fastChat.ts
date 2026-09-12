@@ -105,8 +105,9 @@ export async function tryFastChat({
       signal: reqSignal,
     });
   try {
-    // Primary runtime: this app's own serverless chat endpoint. It streams the
-    // model's reasoning deltas, so the thinking panel always has content.
+    // Optional local runtime (opt-in via VITE_LOCAL_CHAT_PROXY=1). Provider keys
+    // live in the deployed edge functions, so the edge lane below is the default.
+    if (import.meta.env.VITE_LOCAL_CHAT_PROXY !== "1") throw new Error("PROXY_DISABLED");
     resp = await viaProxy();
     if (!resp.ok || !(resp.headers.get("content-type") || "").includes("text/event-stream")) {
       try { await resp.body?.cancel(); } catch { /* ignore */ }
