@@ -11412,6 +11412,7 @@ export type Database = {
         }
         Returns: Json
       }
+      provider_key_counts: { Args: never; Returns: Json }
       record_api_key_usage: {
         Args: {
           p_cost_usd?: number
@@ -11475,6 +11476,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: number
+      }
+      store_provider_key: {
+        Args: { p_provider: string; p_value: string }
+        Returns: Json
       }
       take_service_key: {
         Args: { p_provider: string }
