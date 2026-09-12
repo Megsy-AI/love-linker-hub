@@ -17,6 +17,7 @@ import {
 import AgentTrace from "@/components/chat/AgentTrace";
 import ChatMessage from "@/components/chat/ChatMessage";
 import FilePreviewDialog, { type PreviewFile } from "@/components/chat/FilePreviewDialog";
+import { useUserLang } from "@/lib/authI18n";
 
 
 import { clearActiveComputerRun, setActiveComputerRun } from "@/lib/computer/activeRun";
@@ -37,6 +38,13 @@ export default function ComputerTaskCard({ taskId }: Props) {
   const [timedOut, setTimedOut] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [preview, setPreview] = useState<PreviewFile | null>(null);
+  // These two labels used to be hard-coded in Arabic and showed up in English
+  // sessions too; follow the user's interface language instead.
+  const lang = useUserLang();
+  const labels =
+    lang === "ar-eg"
+      ? { run: "تشغيل المعاينة", tap: "اضغط للمعاينة" }
+      : { run: "Open preview", tap: "Tap to preview" };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
@@ -203,7 +211,7 @@ export default function ComputerTaskCard({ taskId }: Props) {
             onClick={() => void runPreview()}
             className="w-full rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-[13px] font-medium text-primary transition-colors hover:bg-primary/15"
           >
-            تشغيل المعاينة
+            {labels.run}
           </button>
         ) : null}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -235,7 +243,7 @@ export default function ComputerTaskCard({ taskId }: Props) {
                   {f.name}
                 </span>
                 <span className="block text-[11.5px] text-muted-foreground">
-                  اضغط للمعاينة
+                  {labels.tap}
                 </span>
               </span>
             </button>

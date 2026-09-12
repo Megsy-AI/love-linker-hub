@@ -19,3 +19,11 @@
 ## Keys & onboarding (current)
 - [x] Read provider keys from DB tables (abliteration_keys + provider_api_keys) instead of env for chat & deep research
 - [ ] Replace onboarding slide 4 image and fix clipped text
+
+## Pre-publish review (full pass)
+- [x] Signed-in audit of /chat, /settings, /billing, /usage, /referrals, /notifications, /pricing, /auth (desktop + mobile, no horizontal overflow)
+- [x] Services verified live: chat, computer agent (browsing), image generation, research, website build, slides
+- [x] Fixed provider model routing: app model ids (e.g. kimi-k3) are mapped to valid upstream ids instead of failing with model_not_found (502)
+- [x] Fixed hard-coded Arabic labels in the computer task card (now follow interface language)
+- [x] Production build passes; all routes return 200 (no soft-404 deep-link issue like the old megsyai.com host)
+- [ ] Provider billing: the stored abliteration key reports insufficient credits for the direct /api/chat path (production chat goes through the Supabase function and works)

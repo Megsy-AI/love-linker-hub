@@ -38,6 +38,24 @@ export type ChatProxyPayload = {
   customSystem?: string | null;
 };
 
+/**
+ * The provider only accepts its own model ids. App-level ids (e.g. "kimi-k3",
+ * or any model chosen in the picker) must be mapped onto one of them, otherwise
+ * the upstream answers `model_not_found` and the whole turn fails with 502.
+ */
+const UPSTREAM_MODELS = new Set<string>(Object.values(PROXY_MODELS));
+
+export function resolveUpstreamModel(requested?: string, lane?: "fast" | "full"): string {
+  const id = (requested ? String(requested) : "").trim();
+  if (UPSTREAM_MODELS.has(id)) return id;
+  if (lane === "fast") return PROXY_MODELS.fast;
+  // Light/mini/fast-sounding ids stay on the cheap model; everything else gets
+  // the standard one.
+  if (/\b(lite|mini|fast|flash|small|haiku)\b/i.test(id)) return PROXY_MODELS.fast;
+  if (/\b(max|ultra|opus|pro|large|v2)\b/i.test(id)) return PROXY_MODELS.large;
+  return PROXY_MODELS.standard;
+}
+
 function normalizeMessages(input: unknown): Msg[] | null {
   if (!Array.isArray(input) || !input.length || input.length > 80) return null;
   const out: Msg[] = [];
@@ -74,9 +92,7 @@ export async function streamChatProxy(
   const messages = normalizeMessages(payload?.messages);
   if (!messages) return json({ error: "A valid messages array is required" }, 400);
 
-  const model =
-    (payload?.model && String(payload.model)) ||
-    (payload?.lane === "fast" ? PROXY_MODELS.fast : PROXY_MODELS.standard);
+  const model = resolveUpstreamModel(payload?.model, payload?.lane);
 
   const system = [SYSTEM, typeof payload?.customSystem === "string" ? payload.customSystem : ""]
     .filter(Boolean)
