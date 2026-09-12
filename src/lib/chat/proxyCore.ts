@@ -53,11 +53,11 @@ export function resolveUpstreamModel(requested?: string, lane?: "fast" | "full")
   const id = (requested ? String(requested) : "").trim();
   if (UPSTREAM_MODELS.has(id)) return id;
   if (lane === "fast") return PROXY_MODELS.fast;
-  // Light/mini/fast-sounding ids stay on the cheap model; everything else gets
-  // the standard one.
-  if (/\b(lite|mini|fast|flash|small|haiku)\b/i.test(id)) return PROXY_MODELS.fast;
-  if (/\b(max|ultra|opus|pro|large|v2)\b/i.test(id)) return PROXY_MODELS.large;
-  return PROXY_MODELS.standard;
+  // Cost-first routing: the cheap model is the default, and only ids that
+  // explicitly ask for a heavy model get the expensive ones.
+  if (/\b(max|ultra|opus|large|v2)\b/i.test(id)) return PROXY_MODELS.large;
+  if (/\b(pro|thinking|reason)\b/i.test(id)) return PROXY_MODELS.standard;
+  return PROXY_MODELS.fast;
 }
 
 function normalizeMessages(input: unknown): Msg[] | null {
