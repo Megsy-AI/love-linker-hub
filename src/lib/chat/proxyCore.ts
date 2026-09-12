@@ -71,13 +71,9 @@ function normalizeMessages(input: unknown): Msg[] | null {
   return out;
 }
 
-async function apiKey(): Promise<string> {
-  return (await getAbliterationKey()).trim();
-}
-
-/** True when this runtime can serve chat (key comes from the DB key pool). */
+/** True when this runtime can serve chat (keys come from the DB key pool). */
 export async function hasChatProxyKey(): Promise<boolean> {
-  return (await apiKey()).length > 0;
+  return (await getAbliterationKeys()).length > 0;
 }
 
 export async function streamChatProxy(
