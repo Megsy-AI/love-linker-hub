@@ -29,3 +29,17 @@
 - [ ] Provider billing: the stored abliteration key reports insufficient credits for the direct /api/chat path (production chat goes through the Supabase function and works)
 
 - [ ] ربط الموقع بجدول service_keys (Cerebras نصوص / DeAPI + Renderful صور وفيديو / Browser Use الوكيل) بدل abliteration — المفاتيح مشفرة ومحتاجة مفتاح فك التشفير
+
+## نتيجة الاختبارات السبعة (12 سبتمبر)
+1. الأنواع + البناء: ناجح.
+2. كل المسارات ترجع 200 محليًا.
+3. أحجام الحزم: أكبر الملفات (elk / pptx / shiki) كلها lazy — مقبول.
+4. الهاتف + الكمبيوتر: لا يوجد أي تجاوز أفقي في كل الصفحات.
+5. الدخول بالحساب التجريبي: كل الصفحات المحمية تعمل.
+6. الدردشة تعمل عبر Cerebras. أُصلح نداء /api/chat المعطّل (502) في fastChat.
+7. فحص الأمان: أُصلح تسريب prompt، وتزوير الإحالات، والتلاعب بإحصاءات الزيارات.
+
+### مفتوح
+- النموذج أحيانًا يطبع "تفكيره" داخل الرد (سلوك المزود/الـ edge function وليس الواجهة).
+- Leaked password protection غير مفعّل في إعدادات Supabase Auth (يحتاج تفعيل يدوي).
+- تحذير React: setState أثناء render في Transitioner (غير مؤثر).
