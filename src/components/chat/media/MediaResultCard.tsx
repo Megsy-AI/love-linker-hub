@@ -142,7 +142,11 @@ export default function MediaResultCard({
                     </>
                   )
                 ) : r.status === "running" ? (
-                  <RunningTile previewUrl={r.type === "image" ? r.previewUrl : undefined} />
+                  <RunningTile
+                    kind={r.type === "video" ? "video" : "images"}
+                    previewUrl={r.type === "image" ? r.previewUrl : undefined}
+                  />
+
                 ) : r.status === "error" ? (
                   <div className="flex flex-col items-center gap-1.5 text-destructive p-3 text-center">
                     <AlertCircle className="w-5 h-5" />
