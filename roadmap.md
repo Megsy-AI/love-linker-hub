@@ -15,3 +15,9 @@
 - [x] Snapshot capture on leave from first visit + clean #root before React mounts (spaBoot.ts)
 - [x] Typecheck (relaxed tsconfig mirroring source repo) + production build passes
 - [ ] Computer view on chat page — /api/computer-agent now wired (401 without auth, as expected); needs a signed-in test by the user to confirm end-to-end
+
+## Welcome redesign and authenticated verification
+- [ ] Rebuild the welcome experience from the supplied performance-stage specification
+- [ ] Match the mobile sign-in and trial screens to the new welcome visual system
+- [ ] Remove the page-snapshot hydration mismatch
+- [ ] Sign in with the supplied test account and verify the welcome-to-chat flow
