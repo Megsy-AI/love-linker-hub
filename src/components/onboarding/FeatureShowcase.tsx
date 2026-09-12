@@ -302,7 +302,7 @@ function DotWord({ text }: { text: string }) {
       <svg viewBox={`0 0 ${width} 120`} aria-hidden="true">
         <defs>
           <pattern id={id} width="12.6" height="12.6" patternUnits="userSpaceOnUse">
-            <circle cx="6.3" cy="6.3" r="4.5" fill="currentColor" />
+            <circle cx="6.3" cy="6.3" r="4.9" fill="currentColor" />
           </pattern>
         </defs>
         <text
