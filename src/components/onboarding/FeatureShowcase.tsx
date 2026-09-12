@@ -6,7 +6,7 @@ import { setUserLang } from "@/lib/authI18n";
 import welcomeResearch from "@/assets/welcome-character-research-v2.jpg";
 import welcomeCreate from "@/assets/welcome-character-create-v2.jpg";
 import welcomePro from "@/assets/welcome-pro-card-blue.jpg";
-import welcomeTrial from "@/assets/welcome-trial-korean-editorial-v1.jpg";
+import welcomeTrial from "@/assets/welcome-trial-editorial-v2.jpg";
 import "@/styles/welcome-showcase.css";
 
 const AUTH_HERO_POSTER = "/route-assets/auth/auth-hero-v6-poster.jpg";
