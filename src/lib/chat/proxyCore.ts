@@ -47,17 +47,13 @@ function normalizeMessages(input: unknown): Msg[] | null {
   return out;
 }
 
-function apiKey(): string {
-  return (
-    process.env.ABLITERATION_API_KEY ||
-    process.env.VITE_ABLITERATION_API_KEY ||
-    ""
-  ).trim();
+async function apiKey(): Promise<string> {
+  return (await getAbliterationKey()).trim();
 }
 
-/** True when this runtime can serve chat without Supabase. */
-export function hasChatProxyKey(): boolean {
-  return apiKey().length > 0;
+/** True when this runtime can serve chat (key comes from the DB key pool). */
+export async function hasChatProxyKey(): Promise<boolean> {
+  return (await apiKey()).length > 0;
 }
 
 export async function streamChatProxy(
