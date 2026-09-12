@@ -258,14 +258,14 @@ if (savedBubble) document.documentElement.style.setProperty("--user-bubble", sav
 installTapReliability();
 
 
-// React is about to mount into #root: drop the boot mark and any restored
-// page snapshot so they never double-paint alongside the live app.
+// React is about to mount into #root: drop any restored page-snapshot overlay
+// so it never double-paints alongside the live app. #root itself is left
+// untouched — it carries server-rendered markup that React hydrates.
 (() => {
   try {
+    document.getElementById("snapshot-preview")?.remove();
     const rootEl = document.getElementById("root");
-    if (!rootEl) return;
-    rootEl.removeAttribute("data-snapshot-preview");
-    rootEl.removeAttribute("aria-busy");
-    rootEl.replaceChildren();
+    rootEl?.removeAttribute("data-snapshot-preview");
+    rootEl?.removeAttribute("aria-busy");
   } catch {}
 })();
