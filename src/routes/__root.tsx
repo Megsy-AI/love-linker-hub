@@ -85,6 +85,58 @@ const DEFERRED_FONTS_SCRIPT = `(function () {
   else window.addEventListener("load", go, { once: true });
 })();`;
 
+const SNAPSHOT_RESTORE_SCRIPT = `(function () {
+  try {
+    var p = (location.pathname || "/").split(/[?#]/)[0].replace(/\\/+$/, "") || "/";
+    var deny = [
+      "/auth","/login","/signin","/signup","/register","/oauth","/chat","/settings",
+      "/billing","/workspace","/library","/integrations","/agent","/apps","/mfa","/2fa",
+      "/reset-password","/change-password","/change-email","/delete-account",
+      "/accept-invite","/switch-account"
+    ];
+    for (var i = 0; i < deny.length; i++) {
+      if (p === deny[i] || p.indexOf(deny[i] + "/") === 0) return;
+    }
+    var key = "megsy:pagesnap:v1:" + p;
+    var raw = localStorage.getItem(key);
+    if (!raw) return;
+    var e = JSON.parse(raw);
+    if (!e || typeof e.html !== "string" || typeof e.sum !== "number") return;
+    var meta = document.querySelector('meta[name="megsy-build"]');
+    var build = meta ? meta.getAttribute("content") : "";
+    if (!build || build.indexOf("%") >= 0) {
+      build = "d_" + Math.floor(Date.now() / 86400000);
+    }
+    if (e.build !== build) { localStorage.removeItem(key); return; }
+    if (Date.now() - e.ts > 604800000) { localStorage.removeItem(key); return; }
+    var src = e.html + "|" + e.build;
+    var h = 0x811c9dc5;
+    for (var j = 0; j < src.length; j++) {
+      h ^= src.charCodeAt(j);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    if ((h >>> 0) !== e.sum) { localStorage.removeItem(key); return; }
+    var tpl = document.createElement("template");
+    tpl.innerHTML = e.html;
+    tpl.content.querySelectorAll("script,iframe,object,embed,link,meta").forEach(function (el) { el.remove(); });
+    var blocked = { href: 1, src: 1, "xlink:href": 1, formaction: 1, poster: 1 };
+    tpl.content.querySelectorAll("*").forEach(function (el) {
+      for (var a = el.attributes.length - 1; a >= 0; a--) {
+        var n = el.attributes[a].name.toLowerCase();
+        var v = (el.attributes[a].value || "").trim().toLowerCase();
+        if (n.indexOf("on") === 0 || (blocked[n] && v.indexOf("javascript:") === 0)) {
+          el.removeAttribute(el.attributes[a].name);
+        }
+      }
+    });
+    var root = document.getElementById("root");
+    if (!root) return;
+    root.setAttribute("data-snapshot-preview", "true");
+    root.setAttribute("aria-busy", "true");
+    root.appendChild(tpl.content);
+  } catch (err) {}
+})();`;
+
 const SPECULATION_SCRIPT = `(function () {
   try {
     var nav = navigator;
@@ -288,6 +340,7 @@ function RootShell({ children }: { children: ReactNode }) {
           <div id="boot-mark">Megsy</div>
           {children}
         </div>
+        <script dangerouslySetInnerHTML={{ __html: SNAPSHOT_RESTORE_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: SPECULATION_SCRIPT }} />
         <Scripts />
       </body>

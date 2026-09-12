@@ -1,64 +1,355 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPayRegionOrGuess, setPayRegion, type PayRegion } from "@/lib/payRegion";
 import { setUserLang } from "@/lib/authI18n";
 import "@/styles/welcome-showcase.css";
 
-const WIDE_POSTER="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/5c3ec08f-2dbf-4c0a-8588-f6106a789443.webp";
-const WIDE_VIDEO="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_125226_45cb4f38-aa7e-47e1-885d-ae0b69745369.mp4";
-const NARROW_POSTER="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/0f4926a4-e660-4df2-9195-2bfb3e341bdd.webp";
-const NARROW_VIDEO="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_125242_daae1570-386d-4bd5-8896-80499e2371e0.mp4";
+const AUTH_HERO_POSTER = "/route-assets/auth/auth-hero-v6-poster.jpg";
 
-type Card={kind:"speed"|"context"|"connections";eyebrow:string;title:string;description:string;value:string;unit:string};
-const CARDS:Card[]=[
- {kind:"speed",eyebrow:"Inference Speed",title:"Answers at the speed of thought.",description:"Megsy responds in milliseconds, so every conversation keeps moving.",value:"118",unit:"ms"},
- {kind:"context",eyebrow:"Context Window",title:"Understands the whole story.",description:"Work across long documents and complex ideas without losing context.",value:"2.4",unit:"M"},
- {kind:"connections",eyebrow:"Intelligent Connections",title:"Everything works together.",description:"Bring your sources into one intelligent workspace built around you.",value:"16",unit:"K"},
+type Direction = "next" | "prev";
+
+/** Index of the last onboarding slide (the free-trial offer). */
+const LAST = 3;
+
+const STAGE_WIDE_POSTER =
+  "https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/5c3ec08f-2dbf-4c0a-8588-f6106a789443.webp";
+const STAGE_WIDE_SRC =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_125226_45cb4f38-aa7e-47e1-885d-ae0b69745369.mp4";
+const STAGE_NARROW_POSTER =
+  "https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/0f4926a4-e660-4df2-9195-2bfb3e341bdd.webp";
+const STAGE_NARROW_SRC =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_125242_daae1570-386d-4bd5-8896-80499e2371e0.mp4";
+
+type Slide = {
+  lineOne: string;
+  dotWord: string;
+  lineTwo?: string;
+  intro: string;
+  card: {
+    variant: "speed" | "context" | "connections" | "trial";
+    title: string;
+    value: string;
+    unit: string;
+    caption: string;
+  };
+};
+
+const SLIDES: Slide[] = [
+  {
+    lineOne: "Ask once.",
+    dotWord: "Done",
+    intro:
+      "Megsy researches, checks the facts, and turns your request into a finished report, plan, presentation, or completed task.",
+    card: {
+      variant: "speed",
+      title: "Every top model\nOne conversation",
+      value: "40",
+      unit: "+",
+      caption: "Models working\nfor you",
+    },
+  },
+  {
+    lineOne: "One idea.",
+    dotWord: "Every",
+    lineTwo: "format.",
+    intro:
+      "Create images, videos, presentations, websites, and working apps — from the same conversation.",
+    card: {
+      variant: "context",
+      title: "Context Window\nLong-form understanding",
+      value: "2.4",
+      unit: "M",
+      caption: "Tokens processed\nsimultaneously",
+    },
+  },
+  {
+    lineOne: "Unlock",
+    dotWord: "more",
+    intro:
+      "More powerful models, longer tasks, and bigger creations with Megsy Pro.",
+    card: {
+      variant: "connections",
+      title: "Intelligent Connections\nCross-source context",
+      value: "16",
+      unit: "K",
+      caption: "Connected data\nsources",
+    },
+  },
+  {
+    lineOne: "3 days for",
+    dotWord: "$1",
+    intro:
+      "Get 3 premium images every day during your trial. Then continue for $7 in your first month with unlimited premium images, or cancel anytime.",
+    card: {
+      variant: "trial",
+      title: "Megsy Pro\nIntroductory trial",
+      value: "$1",
+      unit: "/ 3 days",
+      caption: "Then $7 your first\nmonth — cancel anytime",
+    },
+  },
 ];
 
-export default function FeatureShowcase({onFinish}:{onFinish?:(target?:"trial")=>void}){
- const [offer,setOffer]=useState(false);
- const [active,setActive]=useState(0);
- const [region]=useState<PayRegion>(()=>getPayRegionOrGuess());
- const trackRef=useRef<HTMLDivElement>(null);
- const finishRef=useRef(onFinish);
- finishRef.current=onFinish;
- useEffect(()=>{setPayRegion(region);void setUserLang("en",{syncRemote:false});},[region]);
- useEffect(()=>{const b=document.body.style.overflow;document.body.style.overflow=offer?"hidden":"";return()=>{document.body.style.overflow=b}},[offer]);
- useEffect(()=>{
-  const media=window.matchMedia("(min-width: 768px)");
-  const leaveDesktop=()=>{if(media.matches)window.setTimeout(()=>finishRef.current?.(),0)};
-  leaveDesktop();media.addEventListener("change",leaveDesktop);
-  return()=>media.removeEventListener("change",leaveDesktop);
- },[]);
- const goTo=(index:number)=>{const track=trackRef.current;const card=track?.children[index] as HTMLElement|undefined;if(track&&card)track.scrollTo({left:card.offsetLeft-track.offsetLeft,behavior:"smooth"});setActive(index)};
- const continueFlow=()=>{if(active<CARDS.length-1)goTo(active+1);else setOffer(true)};
- return <main className="perf-stage" dir="ltr">
-  <StageVideo/><div className="perf-veil"/>
-   <header className="perf-head">
-    <p className="perf-kicker"><Sparkles/> Meet Megsy</p>
-    <h1>Built for <Dots text="Intelligent"/> Performance</h1>
-    <p className="perf-intro">Speed, scale and context—engineered to help you do your best work.</p>
-  </header>
-   <section className="perf-carousel" role="region" aria-roledescription="carousel" aria-label="Megsy capabilities">
-    <div ref={trackRef} className="perf-cards" onScroll={(event)=>{const el=event.currentTarget;const first=el.firstElementChild as HTMLElement|null;if(!first)return;const step=first.offsetWidth+14;setActive(Math.max(0,Math.min(CARDS.length-1,Math.round(el.scrollLeft/step))))}}>
-     {CARDS.map((card,i)=><MetricCard key={card.kind} card={card} index={i}/>) }
-    </div>
-  </section>
-   <footer className="perf-actions">
-    <div className="perf-progress" role="tablist" aria-label="Choose capability">{CARDS.map((card,index)=><button key={card.kind} type="button" role="tab" aria-selected={active===index} aria-label={`Capability ${index+1} of ${CARDS.length}: ${card.eyebrow}`} onClick={()=>goTo(index)} className={active===index?"on":""}/>)}</div>
-    <Button variant="ghost" data-plain onClick={continueFlow} className="perf-next">{active===CARDS.length-1?"See your offer":"Continue"}<ArrowRight/></Button>
-    <Button variant="ghost" data-plain onClick={()=>onFinish?.()} className="perf-skip">Skip for now</Button>
-   </footer>
-  {offer&&<section className="perf-offer">
-   <StageVideo/><div className="perf-veil"/>
-    <div className="offer-copy"><p className="perf-kicker"><Sparkles/> Megsy Pro</p><h2>Make more<br/>for <Dots text="$1"/></h2><p>Try every premium tool for three days. Continue for $7 in your first month, or cancel anytime.</p></div>
-    <article className="offer-card"><div className="offer-price"><strong>$1</strong><span>3 days</span></div><ul><li><Check/>3 premium images every day</li><li><Check/>Unlimited premium images after trial</li><li><Check/>Cancel anytime</li></ul></article>
-    <footer className="perf-actions offer-actions"><Button variant="ghost" data-plain onClick={()=>onFinish?.("trial")} className="perf-next">Start my trial <ArrowRight/></Button><Button variant="ghost" data-plain onClick={()=>onFinish?.()} className="perf-skip">Maybe later</Button></footer>
-  </section>}
- </main>
+export default function FeatureShowcase({
+  onFinish,
+}: {
+  onFinish?: (target?: "trial") => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState<Direction>("next");
+  const touch = useRef({ x: 0, y: 0 });
+  const [region] = useState<PayRegion>(() => getPayRegionOrGuess());
+  const isTrial = index === LAST;
+  const slide = SLIDES[index];
+
+  useEffect(() => {
+    setPayRegion(region);
+    // The welcome showcase is always shown in English, regardless of region.
+    void setUserLang("en", { syncRemote: false });
+  }, [region]);
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyColor = document.body.style.backgroundColor;
+    const previousHtmlColor = document.documentElement.style.backgroundColor;
+    document.body.style.overflow = "hidden";
+    document.body.style.backgroundColor = "#ececeb";
+    document.documentElement.style.backgroundColor = "#ececeb";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.backgroundColor = previousBodyColor;
+      document.documentElement.style.backgroundColor = previousHtmlColor;
+    };
+  }, []);
+
+  const goTo = useCallback((target: number) => {
+    setIndex((current) => {
+      const nextIndex = Math.max(0, Math.min(LAST, target));
+      if (nextIndex === current) return current;
+      setDirection(nextIndex > current ? "next" : "prev");
+      return nextIndex;
+    });
+  }, []);
+
+  // Slide 2 pre-warms the sign-up screen: its code chunk and poster image only.
+  useEffect(() => {
+    if (index !== 1) return;
+    void import("@/pages/auth/AuthPage").catch(() => {});
+    const poster = new Image();
+    poster.src = AUTH_HERO_POSTER;
+  }, [index]);
+
+  // Horizontal scroll (trackpad / mouse wheel) moves between slides.
+  useEffect(() => {
+    let locked = false;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaX) < 24 || Math.abs(event.deltaX) < Math.abs(event.deltaY)) return;
+      event.preventDefault();
+      if (locked) return;
+      locked = true;
+      window.setTimeout(() => {
+        locked = false;
+      }, 450);
+      goTo(index + (event.deltaX > 0 ? 1 : -1));
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [goTo, index]);
+
+  const continueFlow = () => {
+    if (isTrial) {
+      onFinish?.("trial");
+      return;
+    }
+    goTo(index + 1);
+  };
+
+  const finishWithoutOffer = () => onFinish?.();
+
+  const onTouchStart = (event: React.TouchEvent) => {
+    touch.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  };
+
+  const onTouchEnd = (event: React.TouchEvent) => {
+    const dx = event.changedTouches[0].clientX - touch.current.x;
+    const dy = event.changedTouches[0].clientY - touch.current.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy)) return;
+    goTo(dx < 0 ? index + 1 : index - 1);
+  };
+
+  return (
+    <main
+      dir="ltr"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      className="wstage fixed inset-0 isolate h-[100dvh] w-full overflow-hidden"
+    >
+      <StageMotion />
+      <div className="wstage__scrim" />
+
+      <h1 className="sr-only">Welcome to Megsy</h1>
+
+      <section
+        key={index}
+        aria-live="polite"
+        className={`relative z-10 flex h-full flex-col px-[var(--gutter)] pb-44 pt-[max(28px,7vh)] ${
+          direction === "next" ? "welcome-screen-enter-next" : "welcome-screen-enter-prev"
+        }`}
+      >
+        <div className="mx-auto w-full max-w-md sm:max-w-lg">
+          <p className="wstage__headline">
+            <span className="wstage__line">
+              {slide.lineOne}
+              {!slide.lineTwo && <DotWord text={slide.dotWord} />}
+            </span>
+            {slide.lineTwo ? (
+              <span className="wstage__line">
+                <DotWord text={slide.dotWord} lead />
+                <span className="ml-[.22em]">{slide.lineTwo}</span>
+              </span>
+            ) : null}
+          </p>
+          <p className="wstage__intro">{slide.intro}</p>
+        </div>
+
+        <div className="mx-auto mt-[clamp(18px,4vh,42px)] flex min-h-0 w-full max-w-md flex-1 items-start justify-center sm:max-w-lg">
+          <MetricCard card={slide.card} />
+        </div>
+      </section>
+
+      <div className="absolute inset-x-0 bottom-0 z-20 px-[var(--gutter)] pb-[calc(20px+env(safe-area-inset-bottom))] pt-5 sm:mx-auto sm:max-w-md">
+        <div className="mb-3 flex justify-center gap-2" aria-label={`Step ${index + 1} of 4`}>
+          {[0, 1, 2, 3].map((step) => (
+            <Button
+              key={step}
+              type="button"
+              variant="ghost"
+              data-plain
+              aria-label={`Go to step ${step + 1}`}
+              aria-current={step === index ? "step" : undefined}
+              onClick={() => goTo(step)}
+              className="grid h-6 w-7 min-w-0 place-items-center p-0 hover:bg-transparent"
+            >
+              <span
+                className={`block h-1.5 rounded-full transition-[width,background-color] duration-200 ${
+                  step === index ? "w-7 bg-[#222]" : "w-1.5 bg-[rgba(34,34,34,.2)]"
+                }`}
+              />
+            </Button>
+          ))}
+        </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          data-plain
+          onClick={continueFlow}
+          className="h-14 w-full rounded-full bg-[#222] text-base font-semibold !text-[#ececeb] shadow-[0_8px_24px_rgba(34,34,34,.22)] hover:bg-[#2f2f2f]"
+        >
+          {isTrial ? "Start 3 days for $1" : "Continue"}
+          {!isTrial && <ArrowRight className="size-5" />}
+        </Button>
+
+        {isTrial && (
+          <Button
+            type="button"
+            variant="ghost"
+            data-plain
+            onClick={finishWithoutOffer}
+            className="mt-2 h-10 w-full rounded-full text-sm font-semibold text-[#4a4a4a] hover:bg-transparent"
+          >
+            Maybe later
+          </Button>
+        )}
+      </div>
+    </main>
+  );
 }
-function StageVideo(){return <><video className="stage-video wide" autoPlay muted loop playsInline poster={WIDE_POSTER} src={WIDE_VIDEO}/><video className="stage-video narrow" autoPlay muted loop playsInline preload="none" poster={NARROW_POSTER} src={NARROW_VIDEO}/></>}
-function Dots({text}:{text:string}){const raw=useId(),id=`d${raw.replace(/\W/g,"")}`;return <span className="dot-word" aria-label={text}><svg viewBox={`0 0 ${text.length*58} 120`}><defs><pattern id={id} width="12.6" height="12.6" patternUnits="userSpaceOnUse"><circle cx="6.3" cy="6.3" r="4.9" fill="currentColor"/></pattern></defs><text x="0" y="94" fontFamily="Inter,sans-serif" fontWeight="600" fontSize="100" letterSpacing="0" fill={`url(#${id})`}>{text}</text></svg></span>}
-function MetricCard({card,index}:{card:Card;index:number}){return <article className={`metric-card ${card.kind}`} role="group" aria-roledescription="slide" aria-label={`${index+1} of ${CARDS.length}`}><div className="card-art" aria-hidden="true">{card.kind==="speed"?<><span className="speed-orbit"/><span className="speed-core"/></>:card.kind==="context"?<div className="tile-grid">{Array.from({length:7},(_,i)=><i key={i}/>)}</div>:<svg viewBox="0 0 429 238"><path d="M-30 26H113c32 0 34 42 65 42h75c32 0 34-42 66-42h140M-30 120h83c32 0 34 56 66 56h160c32 0 34-56 66-56h114M-30 211h139c25 0 31-34 59-34h95c28 0 34 34 59 34h137"/></svg>}</div><p className="card-eyebrow">{card.eyebrow}</p><div className="metric"><strong>{card.value}</strong><span>{card.unit}</span></div><div className="card-copy"><h2>{card.title}</h2><p>{card.description}</p></div></article>}
+
+function StageMotion() {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const apply = () => setWide(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  return (
+    <video
+      key={wide ? "wide" : "narrow"}
+      className="wstage__motion"
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload={wide ? "auto" : "none"}
+      aria-hidden="true"
+      poster={wide ? STAGE_WIDE_POSTER : STAGE_NARROW_POSTER}
+      src={wide ? STAGE_WIDE_SRC : STAGE_NARROW_SRC}
+    />
+  );
+}
+
+/** Word rendered as an LED dot-matrix fill. */
+function DotWord({ text, lead }: { text: string; lead?: boolean }) {
+  const raw = useId();
+  const id = `dw${raw.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const width = Math.max(1, text.length) * 58;
+  return (
+    <span className={`dot-word${lead ? " dot-word--lead" : ""}`} aria-label={text} role="img">
+      <svg viewBox={`0 0 ${width} 120`} aria-hidden="true">
+        <defs>
+          <pattern id={id} width="12.6" height="12.6" patternUnits="userSpaceOnUse">
+            <circle cx="6.3" cy="6.3" r="4.9" fill="currentColor" />
+          </pattern>
+        </defs>
+        <text
+          x="0"
+          y="94"
+          fontFamily='Inter, -apple-system, "Segoe UI", sans-serif'
+          fontWeight="600"
+          fontSize="100"
+          letterSpacing="-2"
+          fill={`url(#${id})`}
+        >
+          {text}
+        </text>
+      </svg>
+    </span>
+  );
+}
+
+function MetricCard({ card }: { card: Slide["card"] }) {
+  const raw = useId();
+  const noiseId = `n${raw.replace(/[^a-zA-Z0-9]/g, "")}`;
+  return (
+    <article className={`wcard wcard--${card.variant}`}>
+      <svg className="wcard__grain" viewBox="0 0 429 554" aria-hidden="true" preserveAspectRatio="none">
+        <filter id={noiseId}>
+          <feTurbulence type="fractalNoise" baseFrequency=".54" numOctaves="3" seed="27" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="1.8" intercept="-.25" />
+            <feFuncG type="linear" slope="1.8" intercept="-.25" />
+            <feFuncB type="linear" slope="1.8" intercept="-.25" />
+            <feFuncA type="table" tableValues="0 .52" />
+          </feComponentTransfer>
+        </filter>
+        <rect width="429" height="554" filter={`url(#${noiseId})`} />
+      </svg>
+
+      <div className="wcard__body">
+        <h2 className="wcard__title whitespace-pre-line">{card.title}</h2>
+        <div>
+          <div className="wcard__metric">
+            <span className="wcard__value">{card.value}</span>
+            <span className="wcard__unit">{card.unit}</span>
+          </div>
+          <p className="wcard__caption whitespace-pre-line">{card.caption}</p>
+        </div>
+      </div>
+    </article>
+  );
+}
