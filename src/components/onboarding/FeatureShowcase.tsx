@@ -205,7 +205,7 @@ export default function FeatureShowcase({
             </span>
             {slide.lineTwo ? (
               <span className="wstage__line">
-                <DotWord text={slide.dotWord} />
+                <DotWord text={slide.dotWord} lead />
                 <span className="ml-[.22em]">{slide.lineTwo}</span>
               </span>
             ) : null}
@@ -293,12 +293,12 @@ function StageMotion() {
 }
 
 /** Word rendered as an LED dot-matrix fill. */
-function DotWord({ text }: { text: string }) {
+function DotWord({ text, lead }: { text: string; lead?: boolean }) {
   const raw = useId();
   const id = `dw${raw.replace(/[^a-zA-Z0-9]/g, "")}`;
   const width = Math.max(1, text.length) * 58;
   return (
-    <span className="dot-word" aria-label={text} role="img">
+    <span className={`dot-word${lead ? " dot-word--lead" : ""}`} aria-label={text} role="img">
       <svg viewBox={`0 0 ${width} 120`} aria-hidden="true">
         <defs>
           <pattern id={id} width="12.6" height="12.6" patternUnits="userSpaceOnUse">
