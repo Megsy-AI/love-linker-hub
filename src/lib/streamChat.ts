@@ -4,8 +4,12 @@ import { isFastLaneEligible, tryFastChat } from "@/lib/chat/fastChat";
 import { readChatModelPreferences } from "@/lib/chatModelPreferences";
 import { edgeAnonKey, edgeUrl } from "@/lib/edgeRuntime";
 
-/** Dev-only: the local /api/chat probe is skipped once it reports no provider key. */
-let localChatProxyUsable = true;
+/**
+ * Provider keys live server-side in the deployed Supabase functions, so both
+ * dev and production stream through the same edge lane. The local /api/chat
+ * proxy stays opt-in (VITE_LOCAL_CHAT_PROXY=1) for offline provider work only.
+ */
+let localChatProxyUsable = import.meta.env.VITE_LOCAL_CHAT_PROXY === "1";
 
 /**
  * Internal reasoning is ON by default: users expect to see the thinking trace
