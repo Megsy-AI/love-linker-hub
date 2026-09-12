@@ -68,7 +68,7 @@ export async function streamChatProxy(
       headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
 
-  const key = apiKey();
+  const key = await apiKey();
   if (!key) return json({ error: "Chat provider not configured" }, 503);
 
   const messages = normalizeMessages(payload?.messages);

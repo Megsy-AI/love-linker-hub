@@ -19,12 +19,8 @@ const BASE = (process.env.ABLITERATION_API_BASE || "https://api.abliteration.ai/
 );
 const RESEARCH_MODEL = "abliterated-model-large";
 
-function apiKey(): string {
-  return (
-    process.env.ABLITERATION_API_KEY ||
-    process.env.VITE_ABLITERATION_API_KEY ||
-    ""
-  ).trim();
+async function apiKey(): Promise<string> {
+  return (await getAbliterationKey()).trim();
 }
 
 export async function streamDeepResearch(
