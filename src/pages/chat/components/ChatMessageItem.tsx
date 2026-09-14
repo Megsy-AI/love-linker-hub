@@ -167,7 +167,7 @@ const ChatMessageItemImpl = ({
       {showMediaSkeleton ? null : msg.role === "assistant" && msg.longRunId ? (
         <div className="flex flex-col gap-2">
           {typeof msg.content === "string" && msg.content.trim() ? (
-            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</p>
+            <ChatMessage role="assistant" content={msg.content} />
           ) : null}
           <Suspense fallback={null}>
             <ComputerPreviewLazy runId={msg.longRunId} plan={msg.computerPlan} />
@@ -176,7 +176,7 @@ const ChatMessageItemImpl = ({
       ) : msg.role === "assistant" && msg.computerTaskId ? (
         <div className="flex flex-col gap-2">
           {typeof msg.content === "string" && msg.content.trim() ? (
-            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</p>
+            <ChatMessage role="assistant" content={msg.content} />
           ) : null}
           <Suspense fallback={null}>
             <ComputerTaskCardLazy taskId={msg.computerTaskId} />

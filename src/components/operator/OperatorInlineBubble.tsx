@@ -4,6 +4,7 @@ import AgentStar, { AGENT_COLORS, type AgentKey } from "./AgentStar";
 import { OperatorWorkspace } from "./OperatorWorkspace";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Message, MessageContent } from "@/components/prompt-kit/message";
+import ChatMessage from "@/components/chat/ChatMessage";
 import { ExternalLink, FileText, Image as ImageIcon, Square } from "lucide-react";
 
 /**
@@ -48,7 +49,7 @@ export function OperatorInlineBubble({
     return (
       <Message className="mb-6 relative">
         <MessageContent>
-          <div className="prose-chat text-foreground whitespace-pre-wrap">{reply}</div>
+          <ChatMessage role="assistant" content={reply} />
         </MessageContent>
       </Message>
     );
@@ -111,9 +112,7 @@ export function OperatorInlineBubble({
                       <AgentStar agent={key} size={13} active={active} />
                       <span>{ac.label}</span>
                     </div>
-                    <div className="prose-chat text-foreground whitespace-pre-wrap">
-                      {m.content}
-                    </div>
+                    <ChatMessage role="assistant" content={m.content} />
                   </div>
                 );
               })}
