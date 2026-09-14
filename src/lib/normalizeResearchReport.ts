@@ -171,7 +171,22 @@ export const normalizeResearchReport = (raw: string): string => {
   s = s
     .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
     .replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
     .replace(/<tool[\s\S]*?<\/tool>/gi, "");
+
+  // 1b) Some providers emit their untagged scratchpad ("We need to search…",
+  // "Let's draft.", "Now compile report.") inside the answer stream, before the
+  // real report starts. When the text has real headings, drop any preamble that
+  // reads like planning chatter instead of showing it to the user.
+  {
+    const firstHeading = s.search(/^#{1,6}\s+\S/m);
+    if (firstHeading > 0) {
+      const preamble = s.slice(0, firstHeading);
+      const scratch =
+        /\b(we need to|we must|let'?s (draft|search|assume|compile)|now compile|search query|i should|need to (search|list|use)|open ['"«]?https?)/i;
+      if (scratch.test(preamble)) s = s.slice(firstHeading);
+    }
+  }
 
   // 2) Strip inline images (handled by gallery)
   s = s.replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/<img\b[^>]*>/gi, "");
