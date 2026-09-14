@@ -1148,7 +1148,15 @@ const ChatMessage = ({
     () => Array.from(new Set([...persistedThinkingSteps, ...persistedToolSteps])),
     [persistedThinkingSteps, persistedToolSteps],
   );
-  const keepSettledTrace = Boolean(persistentTrace || mode === "code" || mode === "operator");
+  // The thinking trace stays in the conversation for every task-like reply
+  // (tools, services, long runs). Only a plain text chat answer with no steps
+  // settles without a trace.
+  const keepSettledTrace = Boolean(
+    persistentTrace ||
+      (mode && mode !== "normal") ||
+      settledTraceSteps.length > 0 ||
+      (Array.isArray(toolParts) && toolParts.length > 0),
+  );
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [canvasOpen, setCanvasOpen] = useState(false);
 

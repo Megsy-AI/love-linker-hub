@@ -471,9 +471,9 @@ const AnimatedInput = ({
             <div className="flex-1" />
 
             <AnimatePresence mode="popLayout" initial={false}>
-              {/* Typing a new message must always be sendable — the stop button
-                  only takes over while the composer is empty. */}
-              {isLoading && !hasText ? (
+              {/* While any live task runs the send button becomes a stop
+                  button until the task finishes. */}
+              {isLoading ? (
 
                 <Button
                   key="stop"
